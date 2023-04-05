@@ -147,7 +147,7 @@ def get_json_data_from_(s3_client,
       return [(item, ts) for ts, sublist in zip(ts_list, json_data) for item in sublist]
 
     else:
-      return [(item, ts) for item, ts in keys_ts_list]
+      return (json_data, ts_list)
 
 def pd_save_parquet(_s3_client, df, bucket, key, schema=None):
     """
