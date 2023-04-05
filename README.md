@@ -1,25 +1,29 @@
-# Fast interaction with AWS S3 buckets
+# S3 JSON Data Retrieval Utilities
 
-boto3 client is used to interact with s3 buckets  
-joblib Parallel is used to for acceleration
+This repository contains three utility functions for working with JSON data stored in Amazon S3 buckets. These functions allow you to easily retrieve JSON data from multiple files within an S3 bucket and process them in Python.
 
-## Functions:
+## Functions
 
-get_keys_from_(s3_client,  
-                  bucket,  
-                  prefix,  
-                   verbose=0,  
-                   n_jobs = -1)  
-                   
-    Retrieve object keys from an Amazon S3 bucket with the specified prefix.  
-  
-    Parameters:
-        s3_client (boto3.client): An instance of the Amazon S3 client.
-        bucket (str): The name of the S3 bucket.
-        prefix (str): The prefix used to filter object keys.
-        verbose (int, optional): Controls verbosity of the output. Default is 0 (no output).
-                                Set to 1 to print progress messages.
-        n_jobs (int, optional): The number of parallel jobs to run. Default is -1 (all available cores).
+### 1. `get_keys_ts_from_(s3_client, bucket, prefix='', verbose=0, n_jobs=-1)`
 
-    Returns:
-        list: A list of object keys that match the specified prefix in the given S3 bucket.
+This function retrieves a list of keys (paths) and their corresponding last modified timestamps from an S3 bucket, filtered by a specified prefix.
+
+### 2. `read_json_from_(s3_client, bucket, key)`
+
+This function reads a JSON file from an S3 bucket and returns the parsed data as a Python object (usually a dictionary or a list).
+
+### 3. `get_json_data_from_(s3_client, bucket, prefix='', n_jobs=-1, verbose=1, unpack_list=False)`
+
+This function retrieves JSON data from multiple files in an S3 bucket and returns the parsed data as a list of Python objects.
+
+## Usage
+
+To use these functions, you'll first need to install the `boto3` library and set up an S3 client:
+
+```python
+import boto3
+
+s3_client = boto3.client('s3')
+bucket = 'my-bucket'
+prefix = 'path/to/json_files/'
+
