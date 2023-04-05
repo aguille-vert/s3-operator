@@ -13,12 +13,12 @@ def get_page_iterator_keys_ts_from_(page):
     return  [(i['Key'],i['LastModified']) for i in page['Contents']]
 
 
-def get_keys_from_(s3_client,
-                   bucket,
-                   add_str = '', 
-                   prefix='',
-                   n_jobs=-1,
-                   verbose=0):
+def get_keys_ts_from_(s3_client,
+                        bucket,
+                        prefix='',
+                        add_str = '', 
+                        n_jobs=-1,
+                        verbose=0):
     """
     Retrieve object keys from an Amazon S3 bucket with the specified prefix.
     Parameters:
@@ -48,7 +48,10 @@ def get_keys_from_(s3_client,
     if verbose==1:
         print(f'downloaded {len(keys_ts_list)} keys')
 
-    return [i for i in keys_ts_list if add_str in i[0]]
+    if add_str != '':
+      return [i for i in keys_ts_list if add_str in i[0]]
+    else:
+      return keys_ts_list
 
 def read_json_from_(s3_client,
                     bucket,
@@ -60,3 +63,34 @@ def read_json_from_(s3_client,
     except:
         return None
 
+def get_json_data_from_(s3_client,
+                        bucket,
+                        prefix='',
+                        n_jobs=-1,
+                        verbose=1,
+                        unpack_list=False):
+  
+
+    keys_ts_list = get_keys_ts_from_(s3_client,
+                        bucket,
+                        prefix,
+                        verbose=verbose,
+                        n_jobs = n_jobs)
+    
+    ts_list = [i[1] for i in keys_ts_list]
+    key_list = [i[0] for i in keys_ts_list]
+
+    if verbose==1:
+        print('downloading json_data')
+    with parallel_backend('threading', n_jobs=n_jobs):
+        json_data = Parallel(verbose=verbose)(delayed(read_json_from_)(
+                                                    s3_client,
+                                                    bucket,
+                                                    key) for key in key_list)
+    if unpack_list:
+      if verbose==1:
+        print(f'downloaded {len(json_data)} json_files')
+      return [(item, ts) for ts, sublist in zip(ts_list, json_data) for item in sublist]
+
+    else:
+      return [(item, ts) for item, ts in keys_ts_list]
