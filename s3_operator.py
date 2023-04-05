@@ -1,4 +1,5 @@
-from joblib import Parallel, delayed, parallel_backend, dump, load 
+from joblib import Parallel, delayed, parallel_backend, dump, load
+import json
 
 
 def get_page_iterator_from(s3_client,
@@ -48,4 +49,14 @@ def get_keys_from_(s3_client,
         print(f'downloaded {len(keys_ts_list)} keys')
 
     return [i for i in keys_ts_list if add_str in i[0]]
+
+def read_json_from_(s3_client,
+                    bucket,
+                    key):
+    try:
+        obj=s3_client.get_object(Bucket=bucket,
+                                  Key=key)
+        return json.loads(obj['Body'].read())
+    except:
+        return None
 
