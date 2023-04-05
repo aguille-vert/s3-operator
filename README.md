@@ -29,7 +29,7 @@ prefix = 'path/to/json_files/
 ```
 
 
-# Then, you can call the functions as needed:
+Then, you can call the functions as needed:
 
 ```python
 keys_ts_list = get_keys_ts_from_(s3_client, bucket, prefix)
