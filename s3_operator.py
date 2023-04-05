@@ -149,9 +149,23 @@ def get_json_data_from_(s3_client,
     else:
       return [(item, ts) for item, ts in keys_ts_list]
 
-def pd_save_parquet(_s3_client,df,bucket,key,schema=None):
-  buffer = BytesIO()
-  if schema:
-    df.to_parquet(buffer,schema=schema)
-  df.to_parquet(buffer)
-  _s3_client.put_object(Bucket=bucket, Key=key, Body=buffer.getvalue())
+def pd_save_parquet(_s3_client, df, bucket, key, schema=None):
+    """
+    Save a Pandas DataFrame as a parquet file to an S3 bucket.
+
+    Args:
+        _s3_client (boto3.client): A boto3 S3 client instance.
+        df (pandas.DataFrame): The DataFrame to be saved as a parquet file.
+        bucket (str): The name of the S3 bucket where the parquet file will be saved.
+        key (str): The key (path) where the parquet file will be saved in the S3 bucket.
+        schema (pyarrow.Schema, optional): The schema to use when saving the DataFrame. Defaults to None.
+
+    Returns:
+        None
+    """
+    buffer = BytesIO()
+    if schema:
+        df.to_parquet(buffer, schema=schema)
+    df.to_parquet(buffer)
+    _s3_client.put_object(Bucket=bucket, Key=key, Body=buffer.getvalue())
+
