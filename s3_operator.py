@@ -1,5 +1,8 @@
 from joblib import Parallel, delayed, parallel_backend, dump, load
 import json
+from io import BytesIO
+import pandas as pd
+import numpy as np
 
 
 def get_page_iterator_from(s3_client,
@@ -52,6 +55,18 @@ def get_keys_ts_from_(s3_client,
       return [i for i in keys_ts_list if add_str in i[0]]
     else:
       return keys_ts_list
+
+def pd_read_parquet(_s3_client,bucket,key,columns=None):
+  try:
+    obj = _s3_client.get_object(Bucket=bucket,Key=key)
+    buffer = BytesIO(obj['Body'].read())
+    if columns:
+      return pd.read_parquet(buffer,
+                            columns=columns)
+    else:
+      return pd.read_parquet(buffer)
+  except:
+    pass
 
 def read_json_from_(s3_client,
                     bucket,
@@ -133,3 +148,10 @@ def get_json_data_from_(s3_client,
 
     else:
       return [(item, ts) for item, ts in keys_ts_list]
+
+def pd_save_parquet(_s3_client,df,bucket,key,schema=None):
+  buffer = BytesIO()
+  if schema:
+    df.to_parquet(buffer,schema=schema)
+  df.to_parquet(buffer)
+  _s3_client.put_object(Bucket=bucket, Key=key, Body=buffer.getvalue())
