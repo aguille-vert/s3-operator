@@ -26,10 +26,12 @@ import boto3
 s3_client = boto3.client('s3')
 bucket = 'my-bucket'
 prefix = 'path/to/json_files/
+```
 
 
 # Then, you can call the functions as needed:
 
+```python
 keys_ts_list = get_keys_ts_from_(s3_client, bucket, prefix)
 json_data = read_json_from_(s3_client, bucket, key)
 json_data_list = get_json_data_from_(s3_client, bucket, prefix)
