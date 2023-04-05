@@ -56,6 +56,25 @@ def get_keys_ts_from_(s3_client,
 def read_json_from_(s3_client,
                     bucket,
                     key):
+
+    """
+    Reads a JSON file from an Amazon S3 bucket and returns the parsed data as a Python object.
+
+    Args:
+        s3_client (boto3.client): A boto3 S3 client instance used to access the Amazon S3 service.
+        bucket (str): The name of the S3 bucket containing the JSON file.
+        key (str): The key (path) of the JSON file in the S3 bucket.
+
+    Returns:
+        dict or list or None: The JSON data as a Python object (usually a dictionary or a list) if the file
+                              is read successfully, or None if an error occurs while reading the file.
+
+    Example:
+        s3_client = boto3.client('s3')
+        bucket = 'my-bucket'
+        key = 'path/to/myfile.json'
+        json_data = read_json_from_(s3_client, bucket, key)
+    """
     try:
         obj=s3_client.get_object(Bucket=bucket,
                                   Key=key)
@@ -69,6 +88,26 @@ def get_json_data_from_(s3_client,
                         n_jobs=-1,
                         verbose=1,
                         unpack_list=False):
+    """
+    Retrieves JSON data from multiple files in an Amazon S3 bucket and returns the parsed data as a list of Python objects.
+
+    Args:
+        s3_client (boto3.client): A boto3 S3 client instance used to access the Amazon S3 service.
+        bucket (str): The name of the S3 bucket containing the JSON files.
+        prefix (str, optional): The common prefix for the keys (paths) of the JSON files in the S3 bucket. Defaults to ''.
+        n_jobs (int, optional): The number of concurrent jobs to run for reading JSON files. Defaults to -1 (all available CPUs).
+        verbose (int, optional): Controls the verbosity of the function's output. Set to 1 for progress messages, 0 for silent operation. Defaults to 1.
+        unpack_list (bool, optional): If True, the function will return a flat list of tuples containing the unpacked JSON data and its corresponding timestamp. If False, the function will return a list of tuples containing the parsed JSON data (without unpacking) and its corresponding timestamp. Defaults to False.
+
+    Returns:
+        list: A list of tuples containing the JSON data as Python objects (usually dictionaries or lists) and their corresponding timestamps.
+
+    Example:
+        s3_client = boto3.client('s3')
+        bucket = 'my-bucket'
+        prefix = 'path/to/json_files/'
+        json_data = get_json_data_from_(s3_client, bucket, prefix)
+    """
   
 
     keys_ts_list = get_keys_ts_from_(s3_client,
