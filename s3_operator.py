@@ -1,8 +1,11 @@
 from joblib import Parallel, delayed, parallel_backend, dump, load
 import json
-from io import BytesIO
+from io import BytesIO, StringIO
 import pandas as pd
 import numpy as np
+from datetime import datetime, timedelta
+import re
+import csv
 
 
 def get_page_iterator_from(s3_client,
@@ -55,6 +58,59 @@ def get_keys_ts_from_(s3_client,
       return [i for i in keys_ts_list if add_str in i[0]]
     else:
       return keys_ts_list
+
+def get_latest_keys_from_(s3_client,
+                          bucket, 
+                          prefix, 
+                          time_interval=1, 
+                          time_unit='hour', 
+                          additional_str=''):
+  """
+  Get the latest keys from an S3 bucket within a specified time interval.
+
+  Args:
+      bucket (str): The name of the S3 bucket.
+      prefix (str): The prefix used to filter the S3 bucket objects.
+      time_interval (int, optional): The time interval for filtering keys. Default is 1.
+      time_unit (str, optional): The time unit of the time_interval. Can be 'second', 'hour', or 'day'. Default is 'hour'.
+      additional_str (str, optional): An additional string to filter the keys. Default is ''.
+
+  Returns:
+      tuple: A tuple containing two elements:
+          - last_ts_hour (str): The latest timestamp hour as a string in the format "YYYY-MM-DD-HH".
+          - latest_keys (list): A list of keys within the specified time_interval.
+
+  Raises:
+      AssertionError: If the `additional_str` is not of type 'str'.
+      AssertionError: If the `time_unit` is not 'second', 'hour', or 'day'.
+  """
+
+
+  add_str_expr="Error: 'additional_str' should be of type 'str', got"
+  assert isinstance(additional_str, str), f"{add_str_expr} '{type(additional_str)}'"
+  assert time_unit in ['second',
+                        'hour',
+                        'day'], f"time unit should be second,hour or day"
+
+  obj = s3_client.list_objects_v2(Bucket=bucket, Prefix=prefix)
+  keys = [(i['Key'], i['LastModified']) for i in obj['Contents']
+          if re.search(additional_str, i['Key'])]
+
+  if keys:
+    print(keys)
+    keys.sort(key=lambda x: x[1], reverse=True)
+
+    ts_latest = keys[0][1]
+    time_units = {'second': 'seconds', 'hour': 'hours', 'day': 'days'}
+    ts_earliest = ts_latest - timedelta(**{time_units[time_unit]: time_interval})
+
+    latest_keys = [key[0] for key in keys if ts_earliest <= key[1] <= ts_latest]
+    last_ts_hour = ts_latest.strftime("%Y-%m-%d-%H")
+
+    return last_ts_hour, latest_keys
+  else:
+    print("no keys")
+    return None, None
 
 def pd_read_parquet(_s3_client,bucket,key,columns=None):
   try:
@@ -169,3 +225,17 @@ def pd_save_parquet(_s3_client, df, bucket, key, schema=None):
     df.to_parquet(buffer)
     _s3_client.put_object(Bucket=bucket, Key=key, Body=buffer.getvalue())
 
+def upload_csv_file_to_bucket(s3_client, 
+                                data,
+                                bucket,
+                                key,
+                                headers=None):
+
+
+    buffer = StringIO()
+    
+    writer = csv.writer(buffer, delimiter=',')
+    
+    writer.writerow(headers)
+    writer.writerows(data)
+    s3_client.put_object(Bucket = bucket, Key = key, Body = buffer.getvalue())
