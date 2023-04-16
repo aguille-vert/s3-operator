@@ -97,7 +97,7 @@ def get_latest_keys_from_(s3_client,
           if re.search(additional_str, i['Key'])]
 
   if keys:
-    print(keys)
+
     keys.sort(key=lambda x: x[1], reverse=True)
 
     ts_latest = keys[0][1]
