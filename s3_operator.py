@@ -22,7 +22,7 @@ def get_page_iterator_keys_ts_from_(page):
 def get_keys_ts_from_(s3_client,
                         bucket,
                         prefix='',
-                        add_str = '', 
+                        additional_str = '', 
                         n_jobs=-1,
                         verbose=0):
     """
@@ -54,8 +54,8 @@ def get_keys_ts_from_(s3_client,
     if verbose==1:
         print(f'downloaded {len(keys_ts_list)} keys')
 
-    if add_str != '':
-      return [i for i in keys_ts_list if add_str in i[0]]
+    if additional_str != '':
+      return [i for i in keys_ts_list if additional_str in i[0]]
     else:
       return keys_ts_list
 
@@ -113,16 +113,41 @@ def get_latest_keys_from_(s3_client,
     return None, None
 
 def pd_read_parquet(_s3_client,bucket,key,columns=None):
-  try:
-    obj = _s3_client.get_object(Bucket=bucket,Key=key)
-    buffer = BytesIO(obj['Body'].read())
-    if columns:
-      return pd.read_parquet(buffer,
-                            columns=columns)
-    else:
-      return pd.read_parquet(buffer)
-  except:
-    pass
+
+    """
+    Reads a Parquet file from an S3 bucket and returns a pandas DataFrame.
+
+    This function reads a Parquet file stored in an S3 bucket and converts it into a pandas DataFrame.
+    If the `columns` parameter is provided, only the specified columns will be read from the Parquet file.
+
+    Args:
+        _s3_client (boto3.client): A boto3 S3 client instance.
+        bucket (str): The name of the S3 bucket containing the Parquet file.
+        key (str): The key (path) of the Parquet file in the S3 bucket.
+        columns (list, optional): A list of column names to read from the Parquet file. If not provided, all columns will be read.
+
+    Returns:
+        pd.DataFrame: A pandas DataFrame containing the data from the Parquet file, or None if an exception occurs.
+
+    Examples:
+        >>> s3_client = boto3.client('s3')
+        >>> bucket = 'my-bucket'
+        >>> key = 'path/to/parquet_file.parquet'
+        >>> df = pd_read_parquet(s3_client, bucket, key)
+        >>> df.head()
+    """
+
+
+    try:
+        obj = _s3_client.get_object(Bucket=bucket,Key=key)
+        buffer = BytesIO(obj['Body'].read())
+        if columns:
+            return pd.read_parquet(buffer,
+                                columns=columns)
+        else:
+            return pd.read_parquet(buffer)
+    except:
+        pass
 
 def read_json_from_(s3_client,
                     bucket,
