@@ -93,8 +93,9 @@ def get_latest_keys_from_(s3_client,
                         'day'], f"time unit should be second,hour or day"
 
   obj = s3_client.list_objects_v2(Bucket=bucket, Prefix=prefix)
+  pat = re.compile(additional_str, re.I)
   keys = [(i['Key'], i['LastModified']) for i in obj['Contents']
-          if re.search(additional_str, i['Key'])]
+          if pat.search(i['Key'])]
 
   if keys:
 
