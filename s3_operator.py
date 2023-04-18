@@ -94,8 +94,7 @@ def get_latest_keys_from_(s3_client,
 
   obj = s3_client.list_objects_v2(Bucket=bucket, Prefix=prefix)
   pat = re.compile(additional_str, re.I)
-  keys = [(i['Key'], i['LastModified']) for i in obj['Contents']
-          if pat.search(i['Key'])]
+  keys = [(i['Key'], i['LastModified']) for i in obj['Contents'] if pat.search(i['Key'])]
 
   if keys:
 
