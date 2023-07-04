@@ -8,6 +8,34 @@ import re
 import csv
 
 
+
+def get_folder_size(s3_client, 
+                    bucket_name, 
+                    prefix):
+
+    response = s3_client.list_objects_v2(Bucket=bucket_name, Prefix=prefix, Delimiter='/')
+
+    total_size = 0
+
+    # Iterate over objects in the folder
+    for obj in response['Contents']:
+        total_size += obj['Size']
+
+    return total_size
+
+# Provide your bucket name and folder prefix
+bucket_name = 'your-bucket-name'
+folder_prefix = 'your-folder-prefix/'
+
+folder_size = get_folder_size(bucket_name, folder_prefix)
+
+print("Folder size:", folder_size, "bytes")
+print("Folder size (in KB):", folder_size / 1024, "KB")
+print("Folder size (in MB):", folder_size / (1024 * 1024), "MB")
+print("Folder size (in GB):", folder_size / (1024 * 1024 * 1024), "GB")
+
+
+
 def get_page_iterator_from(s3_client,
                            bucket,
                            prefix=''):
