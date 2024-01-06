@@ -23,18 +23,6 @@ def get_folder_size(s3_client,
 
     return total_size
 
-# # Provide your bucket name and folder prefix
-# bucket_name = 'your-bucket-name'
-# folder_prefix = 'your-folder-prefix/'
-
-# folder_size = get_folder_size(bucket_name, folder_prefix)
-
-# print("Folder size:", folder_size, "bytes")
-# print("Folder size (in KB):", folder_size / 1024, "KB")
-# print("Folder size (in MB):", folder_size / (1024 * 1024), "MB")
-# print("Folder size (in GB):", folder_size / (1024 * 1024 * 1024), "GB")
-
-
 
 def get_page_iterator_from(s3_client,
                            bucket,
@@ -92,53 +80,36 @@ def get_latest_keys_from_(s3_client,
                           prefix, 
                           time_interval=1, 
                           time_unit='hour', 
-                          additional_str=''):
-  """
-  Get the latest keys from an S3 bucket within a specified time interval.
-
-  Args:
-      bucket (str): The name of the S3 bucket.
-      prefix (str): The prefix used to filter the S3 bucket objects.
-      time_interval (int, optional): The time interval for filtering keys. Default is 1.
-      time_unit (str, optional): The time unit of the time_interval. Can be 'second', 'hour', or 'day'. Default is 'hour'.
-      additional_str (str, optional): An additional string to filter the keys. Default is ''.
-
-  Returns:
-      tuple: A tuple containing two elements:
-          - last_ts_hour (str): The latest timestamp hour as a string in the format "YYYY-MM-DD-HH".
-          - latest_keys (list): A list of keys within the specified time_interval.
-
-  Raises:
-      AssertionError: If the `additional_str` is not of type 'str'.
-      AssertionError: If the `time_unit` is not 'second', 'hour', or 'day'.
-  """
-
-
-  add_str_expr="Error: 'additional_str' should be of type 'str', got"
-  assert isinstance(additional_str, str), f"{add_str_expr} '{type(additional_str)}'"
-  assert time_unit in ['second',
-                        'hour',
-                        'day'], f"time unit should be second,hour or day"
-
-  obj = s3_client.list_objects_v2(Bucket=bucket, Prefix=prefix)
+                          additional_str='',
+                          zipped=False):
   pat = re.compile(additional_str, re.I)
-  keys = [(i['Key'], i['LastModified']) for i in obj['Contents'] if pat.search(i['Key'])]
+  paginator = s3_client.get_paginator('list_objects')
 
-  if keys:
+  try:
+    page_iterator = paginator.paginate(Bucket=bucket,
+                                      Prefix = prefix)
+    key_ts = []
+    for page in page_iterator:
+      page_keys = [(i['Key'],i['LastModified']) for i in page['Contents'] if pat.search(i['Key'])]
+      key_ts.extend(page_keys)
+    key_ts.sort(key=lambda x: x[1], reverse=True)
 
-    keys.sort(key=lambda x: x[1], reverse=True)
-
-    ts_latest = keys[0][1]
+    ts_latest = key_ts[0][1]
     time_units = {'second': 'seconds', 'hour': 'hours', 'day': 'days'}
     ts_earliest = ts_latest - timedelta(**{time_units[time_unit]: time_interval})
 
-    latest_keys = [key[0] for key in keys if ts_earliest <= key[1] <= ts_latest]
+    latest_keys = [key[0] for key in key_ts if ts_earliest <= key[1] <= ts_latest]
+    latest_ts = [key[1] for key in key_ts if ts_earliest <= key[1] <= ts_latest]
     last_ts_hour = ts_latest.strftime("%Y-%m-%d-%H")
-
-    return last_ts_hour, latest_keys
-  else:
-    print("no keys")
-    return None, None
+    if zipped:
+      return zip(latest_ts, latest_keys)
+    
+  except:
+    last_ts_hour = None
+    latest_keys = []
+    if zipped:
+      return zip([],[])
+  return last_ts_hour, latest_keys
 
 def pd_read_parquet(_s3_client,bucket,key,columns=None):
 
